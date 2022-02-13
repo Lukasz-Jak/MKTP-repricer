@@ -36,10 +36,10 @@ def check_other_offers(xpath):
 # m = calc_df.apply(filter_fn, axis=1)
 # print(m)
 
-base_file_df = pd.read_excel(r"C:\Users\jakub\Documents\Trena - emag\Repricing_eMAG_FBE.xlsx")
+base_file_df = pd.read_excel(r"C:\Users\jakub\Documents\Trena - emag\Repricing_eMAG_FBE_test.xlsx")
 #print(base_file_df)
 main_df = base_file_df[["Brand", "Category", "EAN", "Product code", "Part number key (PNK)", "Status", "Actual stock", "Position", "Av. Sale price", "R (5)", "Minimum price", "Maximum price", "eMAG URL"]].copy()
-main_df = main_df.loc[(main_df["Status"] == 1) & (main_df["Brand"] == "MILK SHAKE")]
+main_df = main_df.loc[(main_df["Status"] == 1)]
 main_df["Price"] = 0
 
 
@@ -154,14 +154,14 @@ print(calc_df)
 # calc_df = calc_df.loc[(calc_df["Price"] != "N/A") or (calc_df["Price_2"] != "Price_2_fail")]
 
 # V1 - BuyBox - podnosi cenę względem ceny drugiego sprzedawcy, ale nie obniża poniżej pierwotnie ustawionej "Price". Pomija przypadki gdy na drugiej pozycji jest Trena FBM.
-df_bb = calcdf.loc[(calcdf["Seller_name"] == "Trena FBE") & (calcdf["Seller_2_name"] != "Trena FBM") & (calcdf["Rotacja (7)"] > 2)]
+df_bb = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBM") & (calc_df["R (5)"] > 2)]
 df_bb["New_sale_price_gross"] = ((df_bb["Price_2"] - 0.1) * ((df_bb["Ratings_diff"] / 10) + 1.02)).round(decimals = 2)
 df_bb = df_bb.loc[(df_bb["New_sale_price_gross"] > df_bb["Price"])]
 df_bb["New_sale_price_net"] = (df_bb["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_bb)
 
 # V2 - Trena FBE na 2 pozycji - obniża cenę względem ceny z BuyBux'a. Nie ustawi wyższej niż pierwotnie była ("Price_2"). Pomija przypadki gdy w BB jest Trena FBM.
-df_p2 = calcdf.loc[(calcdf["Seller_2_name"] == "Trena FBE") & (calcdf["Seller_name"] != "Trena FBM") & (calcdf["Rotacja (7)"] < 10)]
+df_p2 = calc_df.loc[(calc_df["Seller_2_name"] == "Trena FBE") & (calc_df["Seller_name"] != "Trena FBM") & (calc_df["R (5)"] < 10)]
 df_p2["New_sale_price_gross"] = ((df_p2["Price"] - 0.05) * (((df_p2["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
 df_p2 = df_p2.loc[(df_p2["New_sale_price_gross"] < df_p2["Price_2"])]
 df_p2["New_sale_price_net"] = (df_p2["New_sale_price_gross"] / 1.19).round(decimals = 4)
