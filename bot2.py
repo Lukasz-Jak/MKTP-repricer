@@ -122,7 +122,7 @@ for index in main_df.index:
             #sellers_ratings.update({seller_name:seller_rating})
         except:
             print("N/A")
-            main_df.loc[main_df.index[index], "Seller_2_rating"] = "N/A"
+            main_df.loc[main_df.index[index], "Seller_2_rating"] = seller_rating
 
         # Seller 1 rating - Seller 2 rating
         # ratings_diff = main_df.loc(main_df(["Seller rating"][index])) - main_df.loc(main_df(["Seller 2 rating"][index]))
@@ -132,7 +132,7 @@ for index in main_df.index:
         print("No other offers")
         main_df.loc[main_df.index[index], "Price_2"] = ""
         main_df.loc[main_df.index[index], "Seller_2_name"] = ""
-        main_df.loc[main_df.index[index], "Seller_2_rating"] = ""
+        main_df.loc[main_df.index[index], "Seller_2_rating"] = seller_rating
 
 
 driver.quit()
@@ -145,7 +145,7 @@ main_df.to_excel("Prices_" + str(timestamp) + ".xlsx", index=True)
 
 # Wyliczanie cen
 pd.set_option('chained', None)
-calc_df = main_df
+calc_df = main_df.copy()
 # print(calc_df)
 
 calc_df["Ratings_diff"] = calc_df["Seller_rating"] - calc_df["Seller_2_rating"]
@@ -155,14 +155,14 @@ print(calc_df)
 
 # V1 - BuyBox - podnosi cenę względem ceny drugiego sprzedawcy, ale nie obniża poniżej pierwotnie ustawionej "Price". Pomija przypadki gdy na drugiej pozycji jest Trena FBM.
 df_bb = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBM") & (calc_df["R (5)"] > 2)]
-df_bb["New_sale_price_gross"] = ((df_bb["Price_2"] - 0.1) * ((df_bb["Ratings_diff"] / 10) + 1.02)).round(decimals = 2)
+df_bb["New_sale_price_gross"] = ((df_bb["Price_2"] - 0.2) * ((df_bb["Ratings_diff"] / 10) + 1)).round(decimals = 2)
 df_bb = df_bb.loc[(df_bb["New_sale_price_gross"] > df_bb["Price"])]
 df_bb["New_sale_price_net"] = (df_bb["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_bb)
 
 # V2 - Trena FBE na 2 pozycji - obniża cenę względem ceny z BuyBux'a. Nie ustawi wyższej niż pierwotnie była ("Price_2"). Pomija przypadki gdy w BB jest Trena FBM.
 df_p2 = calc_df.loc[(calc_df["Seller_2_name"] == "Trena FBE") & (calc_df["Seller_name"] != "Trena FBM") & (calc_df["R (5)"] < 10)]
-df_p2["New_sale_price_gross"] = ((df_p2["Price"] - 0.05) * (((df_p2["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
+df_p2["New_sale_price_gross"] = ((df_p2["Price"] - 0.1) * (((df_p2["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
 df_p2 = df_p2.loc[(df_p2["New_sale_price_gross"] < df_p2["Price_2"])]
 df_p2["New_sale_price_net"] = (df_p2["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_p2)
