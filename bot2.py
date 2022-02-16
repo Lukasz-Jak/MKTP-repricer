@@ -61,7 +61,7 @@ for index in main_df.index:
         main_df.loc[main_df.index[index], "Price"] = price
     except:
         print("N/A")
-        main_df.loc[main_df.index[index], "Price"] = "N/A"
+        main_df.loc[main_df.index[index], "Price"] = int(0)
 
     try:
         seller_name = driver.find_element_by_xpath('//a[contains(@href, "see_vendor_page")]').text
@@ -105,6 +105,7 @@ for index in main_df.index:
             main_df.loc[main_df.index[index], "Price_2"] = price_2
         except:
             print("Price_2_fail")
+            main_df.loc[main_df.index[index], "Price_2"] = int(0)
 
         try:
             seller_2_name = driver.find_element_by_xpath('//a[contains(@href, "see_vendor_page_so")]').text
@@ -130,7 +131,7 @@ for index in main_df.index:
 
     else:
         print("No other offers")
-        main_df.loc[main_df.index[index], "Price_2"] = ""
+        main_df.loc[main_df.index[index], "Price_2"] = int(0)
         main_df.loc[main_df.index[index], "Seller_2_name"] = ""
         main_df.loc[main_df.index[index], "Seller_2_rating"] = seller_rating
 
