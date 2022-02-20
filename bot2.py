@@ -141,6 +141,7 @@ driver.quit()
 print(sellers_ratings)   
 print(main_df)
 
+
 # Zapisywanie pliku 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
 main_df.to_excel("Prices_" + str(timestamp) + ".xlsx", index=True)
@@ -184,8 +185,110 @@ df_res["Product code"] = df_res["Product code"].astype(str)
 df_res["EAN"] = df_res["EAN"].astype(str)
 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
-writer = pd.ExcelWriter("Res_prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
+writer = pd.ExcelWriter("New_prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
 df_res.to_excel(writer, index=False, sheet_name="New_prices")
+workbook = writer.book
+worksheet = writer.sheets["New_prices"]
+worksheet.set_zoom(90)
+
+header_format = workbook.add_format({
+        "valign": "vcenter",
+        "align": "center",
+        "bold": True,
+        "font_color": "#ECF2EF",
+        "bg_color": "#011F14"
+    })
+
+# Title
+title = ("Price update FBE - " + str(timestamp))
+title_format = workbook.add_format({'bold': True})
+title_format.set_font_size(18)
+title_format.set_font_color("#393E3C")
+
+worksheet.merge_range("A1:M1", title, title_format)
+worksheet.set_row(1, 16)
+
+for col_num, value in enumerate(df_res.columns.values):
+    worksheet.write(1, col_num, value, header_format)
+
+# title 2
+title_2 = ("BuyBox")
+title_2_format = workbook.add_format({'bold': True, "bg_color": "#FAC948"})
+title_2_format.set_font_size(14)
+title_2_format.set_font_color("#393E3C")
+title_2_format.set_align('center')
+
+worksheet.merge_range("N1:P1", title_2, title_2_format)
+
+# title 3
+title_3 = ("2nd position")
+title_3_format = workbook.add_format({'bold': True, "bg_color": "#30DCEF"})
+title_3_format.set_font_size(14)
+title_3_format.set_font_color("#393E3C")
+title_3_format.set_align('center')
+
+worksheet.merge_range("Q1:S1", title_3, title_3_format)
+
+# title_4
+title_4 = ("Results")
+title_4_format = workbook.add_format({'bold': True, "bg_color": "#38B15A"})
+title_4_format.set_font_size(14)
+title_4_format.set_font_color("#393E3C")
+title_4_format.set_align('center')
+
+worksheet.merge_range("T1:V1", title_4, title_4_format)
+
+# formatowanie kolumn pobranych z pliku
+src_fmt = workbook.add_format({
+        "align": "center",
+        "bg_color": "#D5D8D7",
+        'border': 1
+    })
+worksheet.set_column("A:A", 18, src_fmt)
+worksheet.set_column("B:B", 26, src_fmt)
+worksheet.set_column("C:C", 16, src_fmt)
+worksheet.set_column("D:D", 12, src_fmt)
+worksheet.set_column("E:E", 20, src_fmt)
+# worksheet.set_column("F:F", 12, src_fmt) to delete
+worksheet.set_column("F:M", 12, src_fmt)
+
+# formatowanie kolumn danych z BuyBox'a
+bbdata_fmt = workbook.add_format({
+        "align": "center",
+        "bg_color": "#FBEBCF",
+        'border': 1
+    })
+worksheet.set_column("N:P", 14, bbdata_fmt)
+
+# formatowanie kolumn danych z 2nd position
+nddata_fmt = workbook.add_format({
+        "align": "center",
+        "bg_color": "#DDFFFD",
+        'border': 1
+    })
+worksheet.set_column("Q:S", 14, nddata_fmt)
+
+# formatowanie kolumn danych z results
+results_fmt = workbook.add_format({
+        "align": "center",
+        "bg_color": "#C6F4BA",
+        'border': 1
+    })
+worksheet.set_column("T:T", 12, results_fmt)
+worksheet.set_column("U:V", 18, results_fmt)
+
+# formatowanie waluty (round 2 decimal places)
+currency_fmt = workbook.add_format({
+        'num_format': '#,##0.00', 
+        'border': 1,
+        "align": "center",
+        "bg_color": "#D5D8D7"
+    })
+
+worksheet.set_column("I:I", 12, currency_fmt)
+
+
+writer.save()
 
 print(df_res)
 
