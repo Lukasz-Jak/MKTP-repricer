@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import openpyxl
+import xlsxwriter
 from openpyxl.styles import Font, Color, colors
 import time
 from datetime import datetime
@@ -178,7 +179,15 @@ df_res.loc[df_res["New_sale_price_net"] < df_res["Minimum price"], "New_sale_pri
 df_res.loc[df_res["New_sale_price_net"] > df_res["Minimum price"], "New_sale_price_net"] = df_res["New_sale_price_net"]
 df_res.loc[df_res["New_sale_price_net"] > df_res["Maximum price"], "New_sale_price_net"] = df_res["Maximum price"]
 df_res.loc[df_res["New_sale_price_net"] < df_res["Maximum price"], "New_sale_price_net"] = df_res["New_sale_price_net"]
-print(df_res)
+
+df_res["Product code"] = df_res["Product code"].astype(str)
+df_res["EAN"] = df_res["EAN"].astype(str)
+
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
-df_res.to_excel("Res_prices_" + str(timestamp) + ".xlsx", index=True)
+writer = pd.ExcelWriter("Res_prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
+df_res.to_excel(writer, index=False, sheet_name="New_prices")
+
+print(df_res)
+
+# df_res.to_excel("Res_prices_" + str(timestamp) + ".xlsx", index=True)
 
