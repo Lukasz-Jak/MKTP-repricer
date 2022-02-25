@@ -148,7 +148,7 @@ print(main_df)
 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
 writer = pd.ExcelWriter("Prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
-main_df.to_excel(writer, index=False, sheet_name="Prices", startrow=1)
+main_df.to_excel(writer, index=True, sheet_name="Prices", startrow=1)
 workbook = writer.book
 worksheet = writer.sheets["Prices"]
 worksheet.set_zoom(80)
@@ -291,7 +291,7 @@ df_res["EAN"] = df_res["EAN"].astype(str)
 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
 writer = pd.ExcelWriter("New_prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
-df_res.to_excel(writer, index=False, sheet_name="New_prices", startrow=1)
+df_res.to_excel(writer, index=True, sheet_name="New_prices", startrow=1)
 workbook = writer.book
 worksheet = writer.sheets["New_prices"]
 worksheet.set_zoom(80)
