@@ -14,7 +14,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException 
 
 
-PATH = "C:\Program Files (x86)\chromedriver.exe"
+PATH = "C:/Users/lukasz.jakubowski/Downloads/instalki/chromedriver.exe"
 # driver = webdriver.Chrome(PATH)
 driver = webdriver.Chrome(ChromeDriverManager().install())
 
@@ -37,7 +37,7 @@ def check_other_offers(xpath):
 # m = calc_df.apply(filter_fn, axis=1)
 # print(m)
 
-base_file_df = pd.read_excel(r"C:\Users\jakub\Documents\Trena - emag\Repricing_eMAG_FBE_test.xlsx")
+base_file_df = pd.read_excel(r"C:\Users\lukasz.jakubowski\Documents\eMAG\REPRICING\Repricing - eMAG FBE - test.xlsx")
 #print(base_file_df)
 main_df = base_file_df[["Brand", "Category", "EAN", "Product code", "Part number key (PNK)", "Status", "Actual stock", "Position", "Av. Sale price", "R (5)", "Minimum price", "Maximum price", "eMAG URL"]].copy()
 main_df = main_df.loc[(main_df["Status"] == 1)]
@@ -171,11 +171,18 @@ df_p2["New_sale_price_net"] = (df_p2["New_sale_price_gross"] / 1.19).round(decim
 print(df_p2)
 
 # V3 - Brak Trena FBE jako pierwszy lub drugi sprzedawca
+df_v3 = calc_df.loc[(calc_df["Seller_2_name"] != "Trena FBE") & (calc_df["Seller_name"] != "Trena FBE") & (calc_df["Actual stock"] > 0)]
+df_v3["New_sale_price_gross"] = ((df_v3["Price"] - 0.1) * (((df_v3["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
+# df_v3 = df_v3.loc[(df_v3["New_sale_price_gross"] < df_v3["Price_2"])] - powinno sprawdzać czy cena jest mniejsza niż ta, która była ustawiona według pliku
+df_v3["New_sale_price_net"] = (df_v3["New_sale_price_gross"] / 1.19).round(decimals = 4)
+print(df_v3)
+
+
 # calc_df = calc_df.loc[(calc_df["Seller_name"] != "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBE")]
 
 # V4 - brak innych sprzedawców 
 
-df_res = pd.concat([df_bb, df_p2])
+df_res = pd.concat([df_bb, df_p2, df_v3])
 df_res.loc[df_res["New_sale_price_net"] < df_res["Minimum price"], "New_sale_price_net"] = df_res["Minimum price"]
 df_res.loc[df_res["New_sale_price_net"] > df_res["Minimum price"], "New_sale_price_net"] = df_res["New_sale_price_net"]
 df_res.loc[df_res["New_sale_price_net"] > df_res["Maximum price"], "New_sale_price_net"] = df_res["Maximum price"]
@@ -189,7 +196,7 @@ writer = pd.ExcelWriter("New_prices_" + str(timestamp) + ".xlsx", engine="xlsxwr
 df_res.to_excel(writer, index=False, sheet_name="New_prices")
 workbook = writer.book
 worksheet = writer.sheets["New_prices"]
-worksheet.set_zoom(90)
+worksheet.set_zoom(80)
 
 header_format = workbook.add_format({
         "valign": "vcenter",
