@@ -39,7 +39,7 @@ def check_other_offers(xpath):
 
 base_file_df = pd.read_excel(r"C:\Users\lukasz.jakubowski\Documents\eMAG\REPRICING\Repricing - eMAG FBE - test.xlsx")
 #print(base_file_df)
-main_df = base_file_df[["Brand", "Category", "EAN", "Product code", "Part number key (PNK)", "Status", "Actual stock", "Position", "Av. Sale price", "R (5)", "Minimum price", "Maximum price", "eMAG URL"]].copy()
+main_df = base_file_df[["Brand", "Category", "EAN", "Product code", "Part number key (PNK)", "Status", "Actual stock", "Position", "Av. Sale price", "R (5)", "Minimum price", "Maximum price", "eMAG URL", "Ignore"]].copy()
 main_df = main_df.loc[(main_df["Status"] == 1)]
 main_df["Price"] = 0
 
@@ -157,32 +157,36 @@ print(calc_df)
 # calc_df = calc_df.loc[(calc_df["Price"] != "N/A") or (calc_df["Price_2"] != "Price_2_fail")]
 
 # V1 - BuyBox - podnosi cenę względem ceny drugiego sprzedawcy, ale nie obniża poniżej pierwotnie ustawionej "Price". Pomija przypadki gdy na drugiej pozycji jest Trena FBM.
-df_bb = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBM") & (calc_df["R (5)"] > 2)]
+df_bb = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBM") & (calc_df["R (5)"] > 2) & (calc_df["Ignore"] != 1)]
 df_bb["New_sale_price_gross"] = ((df_bb["Price_2"] - 0.2) * ((df_bb["Ratings_diff"] / 10) + 1)).round(decimals = 2)
 df_bb = df_bb.loc[(df_bb["New_sale_price_gross"] > df_bb["Price"])]
 df_bb["New_sale_price_net"] = (df_bb["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_bb)
 
 # V2 - Trena FBE na 2 pozycji - obniża cenę względem ceny z BuyBux'a. Nie ustawi wyższej niż pierwotnie była ("Price_2"). Pomija przypadki gdy w BB jest Trena FBM.
-df_p2 = calc_df.loc[(calc_df["Seller_2_name"] == "Trena FBE") & (calc_df["Seller_name"] != "Trena FBM") & (calc_df["R (5)"] < 10)]
+df_p2 = calc_df.loc[(calc_df["Seller_2_name"] == "Trena FBE") & (calc_df["Seller_name"] != "Trena FBM") & (calc_df["R (5)"] < 10) & (calc_df["Ignore"] != 1)]
 df_p2["New_sale_price_gross"] = ((df_p2["Price"] - 0.1) * (((df_p2["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
 df_p2 = df_p2.loc[(df_p2["New_sale_price_gross"] < df_p2["Price_2"])]
 df_p2["New_sale_price_net"] = (df_p2["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_p2)
 
 # V3 - Brak Trena FBE jako pierwszy lub drugi sprzedawca
-df_v3 = calc_df.loc[(calc_df["Seller_2_name"] != "Trena FBE") & (calc_df["Seller_name"] != "Trena FBE") & (calc_df["Actual stock"] > 0)]
+df_v3 = calc_df.loc[(calc_df["Seller_2_name"] != "Trena FBE") & (calc_df["Seller_name"] != "Trena FBE") & (calc_df["Actual stock"] > 0) & (calc_df["Ignore"] != 1)]
 df_v3["New_sale_price_gross"] = ((df_v3["Price"] - 0.1) * (((df_v3["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
 # df_v3 = df_v3.loc[(df_v3["New_sale_price_gross"] < df_v3["Price_2"])] - powinno sprawdzać czy cena jest mniejsza niż ta, która była ustawiona według pliku
 df_v3["New_sale_price_net"] = (df_v3["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_v3)
 
+# V4 - brak innych sprzedawców i rotacja (5) mniejsza niż 2 szt. -> obniżka ceny o 1 RON brutto
+df_v4 = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] == "") & (calc_df["Actual stock"] > 0) & (calc_df["R (5)"] < 2) & (calc_df["Ignore"] != 1)]
+df_v4["New_sale_price_gross"] = (df_v4["Price"] - 1).round(decimals = 2)
+df_v4["New_sale_price_net"] = (df_v4["New_sale_price_gross"] / 1.19).round(decimals = 4)
+print(df_v4)
 
-# calc_df = calc_df.loc[(calc_df["Seller_name"] != "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBE")]
+#V5 - 
 
-# V4 - brak innych sprzedawców 
 
-df_res = pd.concat([df_bb, df_p2, df_v3])
+df_res = pd.concat([df_bb, df_p2, df_v3, df_v4])
 df_res.loc[df_res["New_sale_price_net"] < df_res["Minimum price"], "New_sale_price_net"] = df_res["Minimum price"]
 df_res.loc[df_res["New_sale_price_net"] > df_res["Minimum price"], "New_sale_price_net"] = df_res["New_sale_price_net"]
 df_res.loc[df_res["New_sale_price_net"] > df_res["Maximum price"], "New_sale_price_net"] = df_res["Maximum price"]
@@ -193,7 +197,7 @@ df_res["EAN"] = df_res["EAN"].astype(str)
 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
 writer = pd.ExcelWriter("New_prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
-df_res.to_excel(writer, index=False, sheet_name="New_prices")
+df_res.to_excel(writer, index=False, sheet_name="New_prices", startrow=1)
 workbook = writer.book
 worksheet = writer.sheets["New_prices"]
 worksheet.set_zoom(80)
