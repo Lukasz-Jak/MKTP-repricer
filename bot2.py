@@ -14,7 +14,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException 
 
 
-PATH = "C:\Program Files (x86)\chromedriver.exe"
+PATH = "C:/Users/lukasz.jakubowski/Downloads/instalki/chromedriver.exe"
 # driver = webdriver.Chrome(PATH)
 driver = webdriver.Chrome(ChromeDriverManager().install())
 
@@ -37,9 +37,9 @@ def check_other_offers(xpath):
 # m = calc_df.apply(filter_fn, axis=1)
 # print(m)
 
-base_file_df = pd.read_excel(r"C:\Users\jakub\Documents\Trena - emag\Repricing_eMAG_FBE_test.xlsx")
+base_file_df = pd.read_excel(r"C:\Users\lukasz.jakubowski\Documents\eMAG\REPRICING\Repricing - eMAG FBE - test.xlsx")
 #print(base_file_df)
-main_df = base_file_df[["Brand", "Category", "EAN", "Product code", "Part number key (PNK)", "Status", "Actual stock", "Position", "Av. Sale price", "R (5)", "Minimum price", "Maximum price", "eMAG URL"]].copy()
+main_df = base_file_df[["Brand", "Category", "EAN", "Product code", "Part number key (PNK)", "Status", "Actual stock", "Position", "Av. Sale price", "R (5)", "Minimum price", "Maximum price", "eMAG URL", "Ignore"]].copy()
 main_df = main_df.loc[(main_df["Status"] == 1)]
 main_df["Price"] = 0
 
@@ -141,10 +141,100 @@ driver.quit()
 print(sellers_ratings)   
 print(main_df)
 
+# Zapisywanie pliku "Prices"
+#Region
+# timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
+# main_df.to_excel("Prices_" + str(timestamp) + ".xlsx", index=True)
 
-# Zapisywanie pliku 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
-main_df.to_excel("Prices_" + str(timestamp) + ".xlsx", index=True)
+writer = pd.ExcelWriter("Prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
+main_df.to_excel(writer, index=False, sheet_name="Prices", startrow=1)
+workbook = writer.book
+worksheet = writer.sheets["Prices"]
+worksheet.set_zoom(80)
+
+header_format = workbook.add_format({
+        "valign": "vcenter",
+        "align": "center",
+        "bold": True,
+        "font_color": "#ECF2EF",
+        "bg_color": "#011F14"
+    })
+
+# Title
+title = ("Price update FBE - " + str(timestamp))
+title_format = workbook.add_format({'bold': True})
+title_format.set_font_size(18)
+title_format.set_font_color("#393E3C")
+
+worksheet.merge_range("A1:N1", title, title_format)
+worksheet.set_row(1, 16)
+
+for col_num, value in enumerate(main_df.columns.values):
+    worksheet.write(1, col_num, value, header_format)
+
+# title 2
+title_2 = ("BuyBox")
+title_2_format = workbook.add_format({'bold': True, "bg_color": "#FAC948"})
+title_2_format.set_font_size(14)
+title_2_format.set_font_color("#393E3C")
+title_2_format.set_align('center')
+
+worksheet.merge_range("O1:Q1", title_2, title_2_format)
+
+# title 3
+title_3 = ("2nd position")
+title_3_format = workbook.add_format({'bold': True, "bg_color": "#30DCEF"})
+title_3_format.set_font_size(14)
+title_3_format.set_font_color("#393E3C")
+title_3_format.set_align('center')
+
+worksheet.merge_range("R1:T1", title_3, title_3_format)
+
+# formatowanie kolumn pobranych z pliku
+src_fmt = workbook.add_format({
+        "align": "center",
+        "bg_color": "#D5D8D7",
+        'border': 1
+    })
+worksheet.set_column("A:A", 14, src_fmt)
+worksheet.set_column("B:B", 18, src_fmt)
+worksheet.set_column("C:C", 30, src_fmt)
+worksheet.set_column("D:D", 16, src_fmt)
+worksheet.set_column("E:E", 12, src_fmt)
+worksheet.set_column("F:F", 20, src_fmt)
+worksheet.set_column("G:K", 12, src_fmt)
+worksheet.set_column("L:N", 14, src_fmt)
+
+# formatowanie kolumn danych z BuyBox'a
+bbdata_fmt = workbook.add_format({
+        "align": "center",
+        "bg_color": "#FBEBCF",
+        'border': 1
+    })
+worksheet.set_column("O:Q", 14, bbdata_fmt)
+
+# formatowanie kolumn danych z 2nd position
+nddata_fmt = workbook.add_format({
+        "align": "center",
+        "bg_color": "#DDFFFD",
+        'border': 1
+    })
+worksheet.set_column("R:T", 14, nddata_fmt)
+
+# formatowanie waluty (round 2 decimal places)
+currency_fmt = workbook.add_format({
+        'num_format': '#,##0.00', 
+        'border': 1,
+        "align": "center",
+        "bg_color": "#D5D8D7"
+    })
+
+worksheet.set_column("J:J", 12, currency_fmt)
+
+writer.save()
+#Endregion
+
 
 # Wyliczanie cen
 pd.set_option('chained', None)
@@ -156,26 +246,37 @@ print(calc_df)
 
 # calc_df = calc_df.loc[(calc_df["Price"] != "N/A") or (calc_df["Price_2"] != "Price_2_fail")]
 
-# V1 - BuyBox - podnosi cenę względem ceny drugiego sprzedawcy, ale nie obniża poniżej pierwotnie ustawionej "Price". Pomija przypadki gdy na drugiej pozycji jest Trena FBM.
-df_bb = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBM") & (calc_df["R (5)"] > 2)]
+# V1 - BuyBox - podnosi cenę względem ceny drugiego sprzedawcy, ale nie obniża poniżej pierwotnie ustawionej "Price". Pomija przypadki gdy na drugiej pozycji jest Trena FBM. Pomija przypadki gdy na 2 pozycji jest Trena FBM.
+df_bb = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBM") & (calc_df["R (5)"] > 2) & (calc_df["Ignore"] != 1)]
 df_bb["New_sale_price_gross"] = ((df_bb["Price_2"] - 0.2) * ((df_bb["Ratings_diff"] / 10) + 1)).round(decimals = 2)
 df_bb = df_bb.loc[(df_bb["New_sale_price_gross"] > df_bb["Price"])]
 df_bb["New_sale_price_net"] = (df_bb["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_bb)
 
-# V2 - Trena FBE na 2 pozycji - obniża cenę względem ceny z BuyBux'a. Nie ustawi wyższej niż pierwotnie była ("Price_2"). Pomija przypadki gdy w BB jest Trena FBM.
-df_p2 = calc_df.loc[(calc_df["Seller_2_name"] == "Trena FBE") & (calc_df["Seller_name"] != "Trena FBM") & (calc_df["R (5)"] < 10)]
+# V2 - Trena FBE na 2 pozycji - obniża cenę względem ceny z BuyBux'a. Nie ustawia wyższej niż pierwotnie ustawiona cena ("Price_2"). Pomija przypadki gdy w BB jest Trena FBM.
+df_p2 = calc_df.loc[(calc_df["Seller_2_name"] == "Trena FBE") & (calc_df["Seller_name"] != "Trena FBM") & (calc_df["R (5)"] < 10) & (calc_df["Ignore"] != 1)]
 df_p2["New_sale_price_gross"] = ((df_p2["Price"] - 0.1) * (((df_p2["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
 df_p2 = df_p2.loc[(df_p2["New_sale_price_gross"] < df_p2["Price_2"])]
 df_p2["New_sale_price_net"] = (df_p2["New_sale_price_gross"] / 1.19).round(decimals = 4)
 print(df_p2)
 
-# V3 - Brak Trena FBE jako pierwszy lub drugi sprzedawca
-# calc_df = calc_df.loc[(calc_df["Seller_name"] != "Trena FBE") & (calc_df["Seller_2_name"] != "Trena FBE")]
+# V3 - Brak Trena FBE jako pierwszy lub drugi sprzedawca. Ustawia cenę względem ceny z BuyBox'a.
+df_v3 = calc_df.loc[(calc_df["Seller_2_name"] != "Trena FBE") & (calc_df["Seller_name"] != "Trena FBE") & (calc_df["Actual stock"] > 0) & (calc_df["Ignore"] != 1)]
+df_v3["New_sale_price_gross"] = ((df_v3["Price"] - 0.1) * (((df_v3["Ratings_diff"]) * (-1) / 10) + 1)).round(decimals = 2)
+# df_v3 = df_v3.loc[(df_v3["New_sale_price_gross"] < df_v3["Price_2"])] - powinno sprawdzać czy cena jest mniejsza niż ta, która była ustawiona według pliku
+df_v3["New_sale_price_net"] = (df_v3["New_sale_price_gross"] / 1.19).round(decimals = 4)
+print(df_v3)
 
-# V4 - brak innych sprzedawców 
+# V4 - Brak innych sprzedawców i rotacja (5) mniejsza niż 2 szt. -> obniżka ceny o 1 RON brutto
+df_v4 = calc_df.loc[(calc_df["Seller_name"] == "Trena FBE") & (calc_df["Seller_2_name"] == "") & (calc_df["Actual stock"] > 0) & (calc_df["R (5)"] < 2) & (calc_df["Ignore"] != 1)]
+df_v4["New_sale_price_gross"] = (df_v4["Price"] - 1).round(decimals = 2)
+df_v4["New_sale_price_net"] = (df_v4["New_sale_price_gross"] / 1.19).round(decimals = 4)
+print(df_v4)
 
-df_res = pd.concat([df_bb, df_p2])
+#V5 -
+
+
+df_res = pd.concat([df_bb, df_p2, df_v3, df_v4])
 df_res.loc[df_res["New_sale_price_net"] < df_res["Minimum price"], "New_sale_price_net"] = df_res["Minimum price"]
 df_res.loc[df_res["New_sale_price_net"] > df_res["Minimum price"], "New_sale_price_net"] = df_res["New_sale_price_net"]
 df_res.loc[df_res["New_sale_price_net"] > df_res["Maximum price"], "New_sale_price_net"] = df_res["Maximum price"]
@@ -184,12 +285,16 @@ df_res.loc[df_res["New_sale_price_net"] < df_res["Maximum price"], "New_sale_pri
 df_res["Product code"] = df_res["Product code"].astype(str)
 df_res["EAN"] = df_res["EAN"].astype(str)
 
+
+# Zapisywanie pliku "New prices"
+#Region
+
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
 writer = pd.ExcelWriter("New_prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
-df_res.to_excel(writer, index=False, sheet_name="New_prices")
+df_res.to_excel(writer, index=False, sheet_name="New_prices", startrow=1)
 workbook = writer.book
 worksheet = writer.sheets["New_prices"]
-worksheet.set_zoom(90)
+worksheet.set_zoom(80)
 
 header_format = workbook.add_format({
         "valign": "vcenter",
@@ -287,10 +392,10 @@ currency_fmt = workbook.add_format({
 
 worksheet.set_column("I:I", 12, currency_fmt)
 
-
 writer.save()
+
+#Endregion
 
 print(df_res)
 
 # df_res.to_excel("Res_prices_" + str(timestamp) + ".xlsx", index=True)
-
