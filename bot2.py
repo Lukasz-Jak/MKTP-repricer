@@ -148,7 +148,8 @@ print(main_df)
 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
 writer = pd.ExcelWriter("Prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
-main_df.to_excel(writer, index=True, sheet_name="Prices", startrow=1)
+# main_df = main_df.drop("Ignore", 1)
+main_df.to_excel(writer, index=False, sheet_name="Prices", startrow=1)
 workbook = writer.book
 worksheet = writer.sheets["Prices"]
 worksheet.set_zoom(80)
@@ -197,14 +198,14 @@ src_fmt = workbook.add_format({
         "bg_color": "#D5D8D7",
         'border': 1
     })
-worksheet.set_column("A:A", 14, src_fmt)
-worksheet.set_column("B:B", 18, src_fmt)
-worksheet.set_column("C:C", 30, src_fmt)
-worksheet.set_column("D:D", 16, src_fmt)
-worksheet.set_column("E:E", 12, src_fmt)
-worksheet.set_column("F:F", 20, src_fmt)
-worksheet.set_column("G:K", 12, src_fmt)
-worksheet.set_column("L:N", 14, src_fmt)
+worksheet.set_column("A:A", 24, src_fmt)
+worksheet.set_column("B:B", 30, src_fmt)
+worksheet.set_column("C:C", 16, src_fmt)
+worksheet.set_column("D:D", 12, src_fmt)
+worksheet.set_column("E:E", 20, src_fmt)
+worksheet.set_column("F:F", 12, src_fmt)
+worksheet.set_column("G:M", 14, src_fmt)
+worksheet.set_column("N:N", 12, src_fmt)
 
 # formatowanie kolumn danych z BuyBox'a
 bbdata_fmt = workbook.add_format({
@@ -291,7 +292,8 @@ df_res["EAN"] = df_res["EAN"].astype(str)
 
 timestamp = datetime.now().strftime("%Y_%m_%d %H-%M-%S")
 writer = pd.ExcelWriter("New_prices_" + str(timestamp) + ".xlsx", engine="xlsxwriter")
-df_res.to_excel(writer, index=True, sheet_name="New_prices", startrow=1)
+df_res = df_res.drop("Ignore", 1)
+df_res.to_excel(writer, index=False, sheet_name="New_prices", startrow=1)
 workbook = writer.book
 worksheet = writer.sheets["New_prices"]
 worksheet.set_zoom(80)
@@ -354,8 +356,9 @@ worksheet.set_column("B:B", 26, src_fmt)
 worksheet.set_column("C:C", 16, src_fmt)
 worksheet.set_column("D:D", 12, src_fmt)
 worksheet.set_column("E:E", 20, src_fmt)
-# worksheet.set_column("F:F", 12, src_fmt) to delete
-worksheet.set_column("F:M", 12, src_fmt)
+worksheet.set_column("F:J", 12, src_fmt)
+worksheet.set_column("K:L", 18, src_fmt)
+worksheet.set_column("M:M", 14, src_fmt)
 
 # formatowanie kolumn danych z BuyBox'a
 bbdata_fmt = workbook.add_format({
