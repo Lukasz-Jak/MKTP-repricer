@@ -14,7 +14,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException 
 
 
-PATH = "C:/Users/lukasz.jakubowski/Downloads/instalki/chromedriver.exe"
+PATH = "C:\Program Files (x86)\chromedriver.exe"
 # driver = webdriver.Chrome(PATH)
 driver = webdriver.Chrome(ChromeDriverManager().install())
 
@@ -37,7 +37,7 @@ def check_other_offers(xpath):
 # m = calc_df.apply(filter_fn, axis=1)
 # print(m)
 
-base_file_df = pd.read_excel(r"C:\Users\lukasz.jakubowski\Documents\eMAG\REPRICING\Repricing - eMAG FBE - test.xlsx")
+base_file_df = pd.read_excel(r"C:\Users\jakub\Documents\Trena - emag\Repricing_eMAG_FBE_test.xlsx")
 #print(base_file_df)
 main_df = base_file_df[["Brand", "Category", "EAN", "Product code", "Part number key (PNK)", "Status", "Actual stock", "Position", "Av. Sale price", "R (5)", "Minimum price", "Maximum price", "eMAG URL", "Ignore"]].copy()
 # main_df = main_df.loc[(main_df["Status"] == 1)]
