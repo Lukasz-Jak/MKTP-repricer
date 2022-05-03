@@ -64,7 +64,7 @@ for index in main_df.index:
         driver.get(main_df["eMAG URL"][index])
         time.sleep(5)
         try:
-            price = driver.find_element_by_xpath('//*[@id="main-container"]/section[1]/div/div[2]/div[2]/div/div/div[2]/form/div[1]/div[1]/div/div/p[2]').text.split(" ")[0]
+            price = driver.find_element_by_xpath('//div[contains(@class, "product-new-price")]').text
             price = float(price[:-2] + "." + price[-2:])
             print(price)
             main_df.loc[main_df.index[index], "Price"] = price
