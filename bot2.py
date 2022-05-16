@@ -1,4 +1,6 @@
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -16,8 +18,10 @@ from selenium.common.exceptions import NoSuchElementException
 
 PATH = "C:\Program Files (x86)\chromedriver.exe"
 # driver = webdriver.Chrome(PATH)
-driver = webdriver.Chrome(ChromeDriverManager().install())
+#driver = webdriver.Chrome(ChromeDriverManager().install())
 
+s=Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=s)
 
 def check_other_offers(xpath):
     try:
@@ -64,10 +68,12 @@ for index in main_df.index:
         driver.get(main_df["eMAG URL"][index])
         time.sleep(5)
         try:
-            price = driver.find_element_by_xpath('//*[@id="main-container"]/section[1]/div/div[2]/div[2]/div/div/div[2]/form/div[1]/div[1]/div/div/p[2]').text.split(" ")[0]
-            price = float(price[:-2] + "." + price[-2:])
-            print(price)
-            main_df.loc[main_df.index[index], "Price"] = price
+            price_elem = driver.find_element(By.XPATH, "//div[@class='product-page-pricing product-highlight']/div/div[@class='d-inline-flex justify-space-between w-100']/div[starts-with(@class, 'pricing-block')]/p[@class='product-new-price']").text
+            price_elem1 = price_elem.replace(',', '.')
+            price_elem2 = price_elem1.split(" L")[0]
+            BB_price = float(price_elem2)
+            print(BB_price)
+            main_df.loc[main_df.index[index], "Price"] = BB_price
         except:
             print("N/A")
             main_df.loc[main_df.index[index], "Price"] = int(0)
@@ -110,10 +116,18 @@ for index in main_df.index:
         
         if check_other_offers("//h3[contains(text(), 'Alte oferte')]") == True:
             try:
-                price_2 = driver.find_element_by_xpath('//div[starts-with(@class, "table-cell-sm va-middle po-size-mdsc-sm po-size-smsc-sm po-size-xssc-full po-pad-xl po-text-small")]').text.split(" ")[0]
-                price_2 = float(price_2[:-2] + "." + price_2[-2:])
-                print(price_2)
-                main_df.loc[main_df.index[index], "Price_2"] = price_2
+                price_2 = driver.find_elements(By.XPATH, "//div[contains(@class, 'table-cell-sm va-middle po-size-mdsc-sm po-size-smsc-sm po-size-xssc-full po-pad-xl po-text-small po-price-item')]/child::p[contains(@class, 'product-new-price')]")
+                price_2_list = []
+                for attr in price_2:
+                    price = attr.text
+                    price_2_list.append(price)
+                    print(price)
+                price_2_value = price_2_list[1]
+                price_2_value.replace(',', '.')
+                print(price_2_value)
+                # price_2 = float(price_2[:-2] + "." + price_2[-2:])
+                # print(price_2)
+                # main_df.loc[main_df.index[index], "Price_2"] = price_2
             except:
                 print("Price_2_fail")
                 main_df.loc[main_df.index[index], "Price_2"] = int(0)
