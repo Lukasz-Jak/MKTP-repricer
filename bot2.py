@@ -25,7 +25,7 @@ driver = webdriver.Chrome(service=s)
 
 def check_other_offers(xpath):
     try:
-        driver.find_element_by_xpath(xpath)
+        driver.find_element(By.XPATH, xpath)
     except NoSuchElementException:
         return False
     return True
@@ -72,83 +72,77 @@ for index in main_df.index:
             price_elem1 = price_elem.replace(',', '.')
             price_elem2 = price_elem1.split(" L")[0]
             BB_price = float(price_elem2)
-            print(BB_price)
+            print(f"1st seller price: {BB_price}")
             main_df.loc[main_df.index[index], "Price"] = BB_price
         except:
             print("N/A")
             main_df.loc[main_df.index[index], "Price"] = int(0)
 
         try:
-            seller_name = driver.find_element_by_xpath('//a[contains(@href, "see_vendor_page")]').text
-            print(seller_name)
+            seller_name = driver.find_element(By.XPATH, '//a[contains(@href, "see_vendor_page")]').text
+            print(f"1st seller name: {seller_name}")
             main_df.loc[main_df.index[index], "Seller_name"] = seller_name
             cpt_list.append(0)
         except:
-            print("N/A")
+            print("1st seller name unknown")
             main_df.loc[main_df.index[index], "Seller_name"] = "N/A"
             cpt_list.append(1)
 
         # Seller rating
 
         try:
-            seller_rating = driver.find_element_by_xpath("//span[contains(@class, 'js-seller-rating-container seller-rating-container font-size-sm gtm_K9Zfl1J3')]").text
-            seller_rating = float(seller_rating)
-            print("Rating from listing: ")
+            seller_rating_elem = driver.find_element(By.XPATH, "//span[@class='js-seller-rating-container seller-rating-container font-size-sm gtm_K9Zfl1J3']").text
+            seller_rating = float(seller_rating_elem)
+            print(f"1st seller rating: {seller_rating}")
             main_df.loc[main_df.index[index], "Seller_rating"] = seller_rating
             sellers_ratings.update({seller_name:seller_rating})
         except:
             if seller_name != "N/A" and seller_name not in sellers_ratings:
                 sellers_ratings.update({seller_name:seller_name})
                 try:
-                    vendor_page = driver.find_element_by_xpath('//a[contains(@href, "see_vendor_page")]').click()
+                    vendor_page = driver.find_element(By.XPATH, '//a[contains(@href, "see_vendor_page")]').click()
                     time.sleep(5)
-                    seller_rating = driver.find_element_by_xpath("//div[contains(@class, 'vendor-general-rating-number font-bold mrg-rgt-sm')]").text
+                    seller_rating = driver.find_element(By.XPATH, "//div[contains(@class, 'vendor-general-rating-number font-bold mrg-rgt-sm')]").text
                     seller_rating = float(seller_rating)
-                    print("Rating from vendor page: ")
+                    print(f"Seller rating from vendor page: {seller_rating}")
                     main_df.loc[main_df.index[index], "Seller_rating"] = seller_rating
                     sellers_ratings.update({seller_name:seller_rating})
                 except:
-                    print("Drugi except - 65 line")
+                    print("1st seller have no rating.")
             else:
-                print("Odczytany wcześniej lub błąd w seller name")
+                print("1st seller rating unknown or has been scraped already.")
 
         # Other offers
         
         if check_other_offers("//h3[contains(text(), 'Alte oferte')]") == True:
             try:
-                price_2 = driver.find_elements(By.XPATH, "//div[contains(@class, 'table-cell-sm va-middle po-size-mdsc-sm po-size-smsc-sm po-size-xssc-full po-pad-xl po-text-small po-price-item')]/child::p[contains(@class, 'product-new-price')]")
-                price_2_list = []
-                for attr in price_2:
-                    price = attr.text
-                    price_2_list.append(price)
-                    print(price)
-                price_2_value = price_2_list[1]
-                price_2_value.replace(',', '.')
-                print(price_2_value)
-                # price_2 = float(price_2[:-2] + "." + price_2[-2:])
-                # print(price_2)
-                # main_df.loc[main_df.index[index], "Price_2"] = price_2
+                price2_elem = driver.find_element(By.XPATH, "//div[contains(@class, 'table-cell-sm')]/p[@class='product-new-price']").text
+                price2_elem = price2_elem.replace(',', '.')
+                price2_elem = price2_elem.split("L")[0]
+                # price2 = float(price2_elem2)
+                print(f"2nd offer price: {price2_elem}")
+                #main_df.loc[main_df.index[index], "Price_2"] = price2
             except:
-                print("Price_2_fail")
+                print("Second offer price unknown")
                 main_df.loc[main_df.index[index], "Price_2"] = int(0)
 
             try:
-                seller_2_name = driver.find_element_by_xpath('//a[contains(@href, "see_vendor_page_so")]').text
-                print(seller_2_name)
+                seller_2_name = driver.find_element(By.XPATH, '//a[contains(@href, "see_vendor_page_so")]').text
+                print(f"2nd offer seller name: {seller_2_name}")
                 main_df.loc[main_df.index[index], "Seller_2_name"] = seller_2_name
             except:
-                print("N/A")
+                print("2nd offer seller name unknown")
                 main_df.loc[main_df.index[index], "Seller_2_name"] = "N/A"
 
             try:
-                seller_2_rating = driver.find_element_by_xpath('//span[contains(@class, "seller-rating-container js-seller-rating-container")]').text
+                seller_2_rating = driver.find_element(By.XPATH, '//span[contains(@class, "seller-rating-container js-seller-rating-container")]').text
                 seller_2_rating = float(seller_2_rating)
-                print("Rating from listing: ")
+                print(f"2nd offer seller rating: {seller_2_rating}")
                 main_df.loc[main_df.index[index], "Seller_2_rating"] = seller_2_rating
                 #sellers_ratings.update({seller_name:seller_rating})
             except:
-                print("N/A")
-                main_df.loc[main_df.index[index], "Seller_2_rating"] = seller_rating
+                print("2nd offer seller rating unknown")
+                main_df.loc[main_df.index[index], "Seller_2_rating"] = "N/A"
 
             # Seller 1 rating - Seller 2 rating
             # ratings_diff = main_df.loc(main_df(["Seller rating"][index])) - main_df.loc(main_df(["Seller 2 rating"][index]))
@@ -158,8 +152,7 @@ for index in main_df.index:
             print("No other offers")
             main_df.loc[main_df.index[index], "Price_2"] = int(0)
             main_df.loc[main_df.index[index], "Seller_2_name"] = ""
-            main_df.loc[main_df.index[index], "Seller_2_rating"] = seller_rating
-
+            main_df.loc[main_df.index[index], "Seller_2_rating"] = "N/A"
 
 driver.quit()
 print(sellers_ratings)   
